@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"gopkg.in/ini.v1"
 )
 
 var nssDB = filepath.Join(os.Getenv("HOME"), ".pki", "nssdb")
@@ -137,7 +139,10 @@ func (t *NSSTrust) PreCheck() error {
 }
 
 func forEachNSSProfile(f func(profile string)) (found int) {
-	profiles, _ := filepath.Glob(NSSProfile)
+	var profiles []string
+	for _, root := range NSSProfiles {
+		profiles = append(profiles, firefoxProfiles(root)...)
+	}
 	if _, err := os.Stat(nssDB); err == nil {
 		profiles = append(profiles, nssDB)
 	}
@@ -159,4 +164,25 @@ func forEachNSSProfile(f func(profile string)) (found int) {
 		}
 	}
 	return
+}
+
+// firefoxProfiles returns the profile directories listed in a profiles.ini file.
+func firefoxProfiles(root string) []string {
+	cfg, err := ini.Load(filepath.Join(root, "profiles.ini"))
+	if err != nil {
+		return nil
+	}
+
+	var profiles []string
+	for _, section := range cfg.Sections() {
+		if !strings.HasPrefix(section.Name(), "Profile") || !section.HasKey("Path") {
+			continue
+		}
+		path := section.Key("Path").String()
+		if section.Key("IsRelative").MustBool(true) {
+			path = filepath.Join(root, path)
+		}
+		profiles = append(profiles, path)
+	}
+	return profiles
 }

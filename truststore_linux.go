@@ -9,12 +9,21 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
 var (
-	// NSSProfile is the path of the Firefox profiles.
-	NSSProfile = os.Getenv("HOME") + "/.mozilla/firefox/*"
+	// NSSProfiles are the directories that may contain a Firefox profiles.ini file.
+	NSSProfiles = []string{
+		os.Getenv("HOME") + "/.mozilla/firefox",
+		xdgConfigHome() + "/mozilla/firefox",
+		// Snap
+		os.Getenv("HOME") + "/snap/firefox/common/.mozilla/firefox",
+		// Flatpak
+		os.Getenv("HOME") + "/.var/app/org.mozilla.firefox/.mozilla/firefox",
+		os.Getenv("HOME") + "/.var/app/org.mozilla.firefox/config/mozilla/firefox",
+	}
 
 	// CertutilInstallHelp is the command to run on linux to add NSS support.
 	CertutilInstallHelp = `apt install libnss3-tools" or "yum install nss-tools`
@@ -49,6 +58,14 @@ func init() {
 func pathExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+// xdgConfigHome returns $XDG_CONFIG_HOME, or $HOME/.config when unset.
+func xdgConfigHome() string {
+	if dir := os.Getenv("XDG_CONFIG_HOME"); filepath.IsAbs(dir) {
+		return dir
+	}
+	return os.Getenv("HOME") + "/.config"
 }
 
 func systemTrustFilename(cert *x509.Certificate) string {

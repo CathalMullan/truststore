@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	// NSSProfile is the path of the Firefox profiles.
-	NSSProfile = os.Getenv("USERPROFILE") + "\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles"
+	// NSSProfiles are the directories that may contain a Firefox profiles.ini file.
+	NSSProfiles = []string{os.Getenv("USERPROFILE") + "\\AppData\\Roaming\\Mozilla\\Firefox"}
 
 	// CertutilInstallHelp is the command to run on windows to add NSS support.
 	// Certutils is not supported on Windows.
